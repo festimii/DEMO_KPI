@@ -1,40 +1,50 @@
 import React from "react";
-import { Card, CardContent, Typography, Box } from "@mui/material";
+import { Card, CardContent, Typography, Box, Chip } from "@mui/material";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 
 export default function KpiCard({ title, value, change }) {
-  const positive = change >= 0;
+  const showChange = typeof change === "number" && !Number.isNaN(change);
+  const positive = (showChange && change >= 0) || false;
   return (
     <Card
       sx={{
         borderRadius: 4,
-        boxShadow: 4,
-        background: "linear-gradient(135deg, #1976d2 30%, #42a5f5 90%)",
-        color: "white",
+        boxShadow: "0 20px 45px rgba(15, 23, 42, 0.12)",
+        background: (theme) => theme.palette.background.paper,
+        color: (theme) => theme.palette.text.primary,
+        border: (theme) => `1px solid ${theme.palette.divider}`,
       }}
     >
       <CardContent>
-        <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>
+        <Typography variant="subtitle2" sx={{ opacity: 0.7 }}>
           {title}
         </Typography>
-        <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
           {value}
         </Typography>
-        <Box display="flex" alignItems="center" mt={1}>
-          {positive ? (
-            <TrendingUpIcon sx={{ color: "#00e676" }} />
-          ) : (
-            <TrendingDownIcon sx={{ color: "#ff1744" }} />
-          )}
-          <Typography
-            variant="body2"
-            sx={{ ml: 1, color: positive ? "#00e676" : "#ff1744" }}
-          >
-            {positive ? "+" : "-"}
-            {Math.abs(change)}%
-          </Typography>
-        </Box>
+        {showChange ? (
+          <Box display="flex" alignItems="center" mt={2} gap={1}>
+            {positive ? (
+              <TrendingUpIcon sx={{ color: "#16a34a" }} />
+            ) : (
+              <TrendingDownIcon sx={{ color: "#dc2626" }} />
+            )}
+            <Chip
+              size="small"
+              color={positive ? "success" : "error"}
+              label={`${positive ? "+" : ""}${change.toFixed(1)}% vs prev.`}
+              sx={{ fontWeight: 600 }}
+            />
+          </Box>
+        ) : (
+          <Chip
+            size="small"
+            label="No previous month"
+            sx={{ mt: 2, fontWeight: 600, color: "text.secondary" }}
+            variant="outlined"
+          />
+        )}
       </CardContent>
     </Card>
   );
