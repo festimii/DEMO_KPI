@@ -28,6 +28,70 @@ const formatCurrency = (value) =>
     maximumFractionDigits: 0,
   });
 
+const formatPercent = (value) => {
+  if (value == null || Number.isNaN(value)) return "—";
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "—";
+  return `${numeric >= 0 ? "+" : ""}${numeric.toFixed(1)}%`;
+};
+
+const normalizeStoreRecord = (record) => ({
+  ...record,
+  TotalSalesYear:
+    record.TotalSalesYear != null && Number.isFinite(Number(record.TotalSalesYear))
+      ? Number(record.TotalSalesYear)
+      : null,
+  AvgSalesPerEmployee:
+    record.AvgSalesPerEmployee != null && Number.isFinite(Number(record.AvgSalesPerEmployee))
+      ? Number(record.AvgSalesPerEmployee)
+      : null,
+  AvgGrowth:
+    record.AvgGrowth != null && Number.isFinite(Number(record.AvgGrowth))
+      ? Number(record.AvgGrowth)
+      : null,
+  PrevYearSales:
+    record.PrevYearSales != null && Number.isFinite(Number(record.PrevYearSales))
+      ? Number(record.PrevYearSales)
+      : null,
+  SalesYoY:
+    record.SalesYoY != null && Number.isFinite(Number(record.SalesYoY))
+      ? Number(record.SalesYoY)
+      : null,
+  SalesContributionPct:
+    record.SalesContributionPct != null && Number.isFinite(Number(record.SalesContributionPct))
+      ? Number(record.SalesContributionPct)
+      : null,
+});
+
+const normalizeKpiRow = (row) => {
+  const toNumber = (value) => {
+    if (value == null || value === "") return null;
+    const cleaned = typeof value === "string" ? value.replace(/%/g, "") : value;
+    const numeric = Number(cleaned);
+    return Number.isFinite(numeric) ? numeric : null;
+  };
+
+  return {
+    ...row,
+    TotalSales: toNumber(row.TotalSales),
+    AvgHeadcount: toNumber(row.AvgHeadcount),
+    SalesPerEmployee: toNumber(row.SalesPerEmployee),
+    HeadcountGrowthPct: toNumber(row.HeadcountGrowthPct),
+    Turnover: toNumber(row.Turnover),
+    ChainTotalSales: toNumber(row.ChainTotalSales),
+    ChainAvgSales: toNumber(row.ChainAvgSales),
+    ChainAvgSalesPerEmployee: toNumber(row.ChainAvgSalesPerEmployee),
+    ChainAvgHeadcount: toNumber(row.ChainAvgHeadcount),
+    ChainAvgGrowth: toNumber(row.ChainAvgGrowth),
+    ChainAvgTurnover: toNumber(row.ChainAvgTurnover),
+    ChainStoreCount: toNumber(row.ChainStoreCount),
+    PrevYearTotalSales: toNumber(row.PrevYearTotalSales),
+    PrevYearSalesPerEmployee: toNumber(row.PrevYearSalesPerEmployee),
+    PrevYearHeadcountGrowth: toNumber(row.PrevYearHeadcountGrowth),
+    PrevYearTurnover: toNumber(row.PrevYearTurnover),
+  };
+};
+
 export default function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [year, setYear] = useState(YEAR_OPTIONS[0]);
@@ -44,12 +108,15 @@ export default function App() {
     axios
       .get(`http://localhost:4000/api/kpis/stores`, { params: { year } })
       .then((res) => {
-        setStores(res.data);
+        const normalized = Array.isArray(res.data)
+          ? res.data.map((store) => normalizeStoreRecord(store))
+          : [];
+        setStores(normalized);
         setSelectedStore((previous) => {
-          if (previous && res.data.some((store) => store.StoreID === previous)) {
+          if (previous && normalized.some((store) => store.StoreID === previous)) {
             return previous;
           }
-          return res.data[0]?.StoreID ?? "";
+          return normalized[0]?.StoreID ?? "";
         });
       })
       .catch(() => setError("Unable to load stores from the API."))
@@ -68,12 +135,18 @@ export default function App() {
       .get(`http://localhost:4000/api/kpis/store/${selectedStore}`, {
         params: { year },
       })
-      .then((res) => setKpiData(res.data))
+      .then((res) =>
+        setKpiData(Array.isArray(res.data) ? res.data.map((row) => normalizeKpiRow(row)) : [])
+      )
       .catch(() => setError("Unable to load KPI data for the selected filters."))
       .finally(() => setLoadingKpis(false));
   }, [selectedStore, year]);
 
   const hasData = useMemo(() => kpiData && kpiData.length > 0, [kpiData]);
+  const selectedStoreRecord = useMemo(
+    () => stores.find((store) => store.StoreID === selectedStore),
+    [selectedStore, stores]
+  );
 
   return (
     <Layout darkMode={darkMode} onToggleDarkMode={() => setDarkMode((prev) => !prev)}>
@@ -111,19 +184,84 @@ export default function App() {
               label="Store"
               onChange={(event) => setSelectedStore(event.target.value)}
             >
-              {stores.map((store) => (
-                <MenuItem key={store.StoreID} value={store.StoreID}>
-                  <Stack direction="row" justifyContent="space-between" sx={{ width: "100%" }}>
-                    <span>{store.StoreID}</span>
-                    <Typography component="span" variant="body2" color="text.secondary">
-                      {formatCurrency(store.TotalSalesYear)}
-                    </Typography>
-                  </Stack>
-                </MenuItem>
-              ))}
+              {stores.map((store) => {
+                const yoy = store.SalesYoY;
+                const contribution = store.SalesContributionPct;
+                return (
+                  <MenuItem key={store.StoreID} value={store.StoreID}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      sx={{ width: "100%" }}
+                    >
+                      <Stack spacing={0.5}>
+                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                          {store.StoreID}
+                        </Typography>
+                        {contribution != null && (
+                          <Typography variant="caption" color="text.secondary">
+                            {formatPercent(contribution)} of chain sales
+                          </Typography>
+                        )}
+                      </Stack>
+                      <Stack spacing={0.5} alignItems="flex-end">
+                        <Typography component="span" variant="body2" color="text.secondary">
+                          {formatCurrency(store.TotalSalesYear)}
+                        </Typography>
+                        {yoy != null && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: yoy >= 0 ? "success.main" : "error.main",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {`${yoy >= 0 ? "+" : ""}${yoy.toFixed(1)}% vs LY`}
+                          </Typography>
+                        )}
+                      </Stack>
+                    </Stack>
+                  </MenuItem>
+                );
+              })}
             </Select>
           </FormControl>
         </Stack>
+
+        {selectedStoreRecord && (
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={2}
+            alignItems={{ xs: "flex-start", md: "center" }}
+            sx={{ bgcolor: "action.hover", p: 2, borderRadius: 3 }}
+          >
+            <Typography variant="subtitle2" color="text.secondary">
+              {selectedStoreRecord.StoreID} contribution
+            </Typography>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} useFlexGap flexWrap="wrap">
+              <Typography variant="body2" color="text.primary">
+                <strong>{formatPercent(selectedStoreRecord.SalesContributionPct)}</strong> of annual
+                sales
+              </Typography>
+              {selectedStoreRecord.SalesYoY != null && (
+                <Typography
+                  variant="body2"
+                  color={selectedStoreRecord.SalesYoY >= 0 ? "success.main" : "error.main"}
+                >
+                  {`${selectedStoreRecord.SalesYoY >= 0 ? "+" : ""}${selectedStoreRecord.SalesYoY.toFixed(
+                    1
+                  )}% vs previous year`}
+                </Typography>
+              )}
+              {selectedStoreRecord.AvgSalesPerEmployee != null && (
+                <Typography variant="body2" color="text.secondary">
+                  {`Avg. sales per employee: $${selectedStoreRecord.AvgSalesPerEmployee.toFixed(0)}`}
+                </Typography>
+              )}
+            </Stack>
+          </Stack>
+        )}
 
         {error && <Alert severity="error">{error}</Alert>}
 
