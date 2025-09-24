@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-} from "@mui/material";
+import { Drawer, List, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -26,20 +20,38 @@ export default function Sidebar({ open }) {
       open={open}
       sx={{
         width: drawerWidth,
+        flexShrink: 0,
         "& .MuiDrawer-paper": {
           width: drawerWidth,
           boxSizing: "border-box",
-          background: "#1e1e2f",
-          color: "#fff",
+          border: "none",
+          background: (theme) => theme.palette.background.paper,
+          color: (theme) => theme.palette.text.primary,
+          pt: 10,
         },
       }}
     >
-      <List>
+      <List sx={{ px: 2, display: "grid", gap: 1 }}>
         {items.map((item) => (
-          <ListItem button key={item.text}>
-            <ListItemIcon sx={{ color: "#90caf9" }}>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItem>
+          <ListItemButton
+            key={item.text}
+            sx={{
+              borderRadius: 2,
+              color: "inherit",
+              gap: 2,
+              "&.Mui-selected": {
+                backgroundColor: (theme) => theme.palette.primary.main,
+                color: "#fff",
+                "& .MuiListItemIcon-root": {
+                  color: "#fff",
+                },
+              },
+            }}
+            selected={item.text === "Dashboard"}
+          >
+            <ListItemIcon sx={{ color: "inherit", minWidth: 0 }}>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.text} primaryTypographyProps={{ fontWeight: 600 }} />
+          </ListItemButton>
         ))}
       </List>
     </Drawer>
