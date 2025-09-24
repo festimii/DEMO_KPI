@@ -9,6 +9,7 @@ import {
   Legend,
   Area,
   Bar,
+  Line,
 } from "recharts";
 import { Card, CardContent, Typography, Chip, Stack } from "@mui/material";
 
@@ -33,7 +34,9 @@ export default function EfficiencyTrend({ data }) {
   }));
 
   return (
-    <Card sx={{ borderRadius: 4, boxShadow: "0 18px 40px rgba(15,23,42,0.08)" }}>
+    <Card
+      sx={{ borderRadius: 4, boxShadow: "0 18px 40px rgba(15,23,42,0.08)" }}
+    >
       <CardContent>
         <Stack
           direction={{ xs: "column", sm: "row" }}
@@ -74,7 +77,10 @@ export default function EfficiencyTrend({ data }) {
                   return [`$${Number(value).toFixed(0)}`, "Sales per Employee"];
                 }
                 if (name === "ChainAvgSalesPerEmployee") {
-                  return [`$${Number(value).toFixed(0)}`, "Chain Avg Sales per Employee"];
+                  return [
+                    `$${Number(value).toFixed(0)}`,
+                    "Chain Avg Sales per Employee",
+                  ];
                 }
                 if (name === "AvgHeadcount") {
                   return [Number(value).toFixed(0), "Avg Headcount"];
