@@ -153,6 +153,53 @@ ORDER BY sd.MonthNumber;
   }
 });
 
+app.get("/api/kpis/store/:id/turnover", async (req, res) => {
+  try {
+    const { year = 2025, month } = req.query;
+    const { id } = req.params;
+    const currentYear = Number(year) || 2025;
+    const monthNumber = month != null ? Number(month) : null;
+    const hasMonthFilter = monthNumber != null && Number.isFinite(monthNumber);
+
+    let query = `
+      SELECT
+        Year,
+        Month,
+        MonthNumber,
+        StoreID,
+        JobTitle,
+        Gender,
+        Start_Headcount,
+        End_Headcount,
+        Terminations,
+        TurnoverPct
+      FROM dbo.vw_Employee_Turnover_ByJobTitle
+      WHERE StoreID = @storeId AND Year = @year
+    `;
+
+    if (hasMonthFilter) {
+      query += " AND MonthNumber = @monthNumber";
+    }
+
+    query += " ORDER BY MonthNumber, JobTitle, Gender;";
+
+    const params = {
+      storeId: id,
+      year: currentYear,
+    };
+
+    if (hasMonthFilter) {
+      params.monthNumber = monthNumber;
+    }
+
+    const data = await queryDatabase(query, params);
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database query failed" });
+  }
+});
+
 // Health check
 app.get("/", (req, res) => res.send("KPI API is running..."));
 

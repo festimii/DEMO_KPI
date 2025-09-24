@@ -72,7 +72,7 @@ export default function Layout({ children, darkMode, onToggleDarkMode }) {
             p: { xs: 3, md: 6 },
             mt: { xs: 10, md: 12 },
             width: "100%",
-            maxWidth: "1320px",
+            maxWidth: "1440px",
             mx: "auto",
             transition: "padding 0.3s ease",
           }}

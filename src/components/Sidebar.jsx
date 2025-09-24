@@ -11,21 +11,17 @@ import {
   Chip,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
-import BarChartIcon from "@mui/icons-material/BarChart";
-import SettingsIcon from "@mui/icons-material/Settings";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import GroupsIcon from "@mui/icons-material/Groups";
 import { alpha } from "@mui/material/styles";
+import { NavLink, useLocation } from "react-router-dom";
 
 const drawerWidth = 220;
 
 export default function Sidebar({ open }) {
+  const location = useLocation();
   const items = [
-    { text: "Dashboard", icon: <DashboardIcon />, active: true },
-    { text: "Revenue Pulse", icon: <BarChartIcon /> },
-    { text: "Efficiency", icon: <TrendingUpIcon /> },
-    { text: "People Pulse", icon: <GroupsIcon /> },
-    { text: "Workspace", icon: <SettingsIcon /> },
+    { text: "Dashboard", icon: <DashboardIcon />, path: "/" },
+    { text: "Turnover insights", icon: <GroupsIcon />, path: "/turnover" },
   ];
 
   return (
@@ -64,6 +60,9 @@ export default function Sidebar({ open }) {
           {items.map((item) => (
             <ListItemButton
               key={item.text}
+              component={NavLink}
+              to={item.path}
+              end={item.path === "/"}
               sx={{
                 borderRadius: 2,
                 color: "inherit",
@@ -72,17 +71,18 @@ export default function Sidebar({ open }) {
                 py: 1.5,
                 border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
                 backgroundColor: (theme) =>
-                  item.active
+                  location.pathname === item.path
                     ? alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.32 : 0.16)
                     : "transparent",
-                boxShadow: item.active ? "0 12px 24px rgba(79, 70, 229, 0.18)" : "none",
+                boxShadow:
+                  location.pathname === item.path ? "0 12px 24px rgba(79, 70, 229, 0.18)" : "none",
                 transition: "all 0.2s ease",
                 "&:hover": {
                   backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12),
                   transform: "translateY(-1px)",
                 },
                 "& .MuiListItemIcon-root": {
-                  color: item.active ? "primary.contrastText" : "inherit",
+                  color: location.pathname === item.path ? "primary.contrastText" : "inherit",
                 },
                 "&.Mui-selected": {
                   backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.25),
@@ -93,7 +93,7 @@ export default function Sidebar({ open }) {
                   },
                 },
               }}
-              selected={item.active}
+              selected={location.pathname === item.path}
             >
               <ListItemIcon sx={{ color: "inherit", minWidth: 0 }}>{item.icon}</ListItemIcon>
               <ListItemText

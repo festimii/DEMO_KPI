@@ -71,7 +71,7 @@ export default function PeopleHealth({ data }) {
             </Typography>
           )}
         </Stack>
-        <ResponsiveContainer width="100%" height={320}>
+        <ResponsiveContainer width="100%" height={360}>
           <LineChart data={normalizedData}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
             <XAxis dataKey="MonthNumber" tickFormatter={monthFormatter} />
