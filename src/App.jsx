@@ -5,9 +5,6 @@ import SalesTrend from "./components/Charts/SalesTrend";
 import EfficiencyTrend from "./components/Charts/EfficiencyTrend";
 import PeopleHealth from "./components/Charts/PeopleHealth";
 import KpiOverview from "./components/KpiOverview";
-import NetworkSummary from "./components/NetworkSummary";
-import StoreBenchmark from "./components/StoreBenchmark";
-import TopStoresTable from "./components/TopStoresTable";
 import {
   Grid,
   CircularProgress,
@@ -39,16 +36,11 @@ export default function App() {
   const [selectedStore, setSelectedStore] = useState("");
   const [kpiData, setKpiData] = useState([]);
   const [loadingKpis, setLoadingKpis] = useState(false);
-  const [comparisonData, setComparisonData] = useState(null);
-  const [overview, setOverview] = useState(null);
-  const [loadingOverview, setLoadingOverview] = useState(false);
   const [error, setError] = useState("");
-  const [overviewError, setOverviewError] = useState("");
 
   useEffect(() => {
     setLoadingStores(true);
     setError("");
-    setComparisonData(null);
     axios
       .get(`http://localhost:4000/api/kpis/stores`, { params: { year } })
       .then((res) => {
@@ -65,36 +57,18 @@ export default function App() {
   }, [year]);
 
   useEffect(() => {
-    setLoadingOverview(true);
-    setOverviewError("");
-    axios
-      .get(`http://localhost:4000/api/kpis/overview`, { params: { year } })
-      .then((res) => setOverview(res.data))
-      .catch(() => setOverviewError("Unable to load network overview from the API."))
-      .finally(() => setLoadingOverview(false));
-  }, [year]);
-
-  useEffect(() => {
     if (!selectedStore) {
       setKpiData([]);
-      setComparisonData(null);
       return;
     }
 
     setLoadingKpis(true);
     setError("");
-    Promise.all([
-      axios.get(`http://localhost:4000/api/kpis/store/${selectedStore}`, {
+    axios
+      .get(`http://localhost:4000/api/kpis/store/${selectedStore}`, {
         params: { year },
-      }),
-      axios.get(`http://localhost:4000/api/kpis/store/${selectedStore}/comparison`, {
-        params: { year },
-      }),
-    ])
-      .then(([kpiResponse, comparisonResponse]) => {
-        setKpiData(kpiResponse.data);
-        setComparisonData(comparisonResponse.data);
       })
+      .then((res) => setKpiData(res.data))
       .catch(() => setError("Unable to load KPI data for the selected filters."))
       .finally(() => setLoadingKpis(false));
   }, [selectedStore, year]);
@@ -169,39 +143,16 @@ export default function App() {
           </Box>
         ) : (
           <Stack spacing={4}>
-            <NetworkSummary summary={overview?.summary} loading={loadingOverview} />
-            {overviewError && <Alert severity="warning">{overviewError}</Alert>}
             <KpiOverview data={kpiData} />
-            <StoreBenchmark
-              storeId={selectedStore}
-              comparison={comparisonData}
-              loading={loadingKpis}
-            />
             <Grid container spacing={4}>
               <Grid item xs={12}>
-                <SalesTrend
-                  data={kpiData}
-                  storeId={selectedStore}
-                  comparison={comparisonData?.monthlyComparison}
-                />
+                <SalesTrend data={kpiData} storeId={selectedStore} />
               </Grid>
               <Grid item xs={12} lg={6}>
-                <EfficiencyTrend
-                  data={kpiData}
-                  comparison={comparisonData?.monthlyComparison}
-                />
+                <EfficiencyTrend data={kpiData} />
               </Grid>
               <Grid item xs={12} lg={6}>
-                <PeopleHealth
-                  data={kpiData}
-                  comparison={comparisonData?.monthlyComparison}
-                />
-              </Grid>
-              <Grid item xs={12} lg={6}>
-                <TopStoresTable
-                  data={overview?.topStores ?? []}
-                  loading={loadingOverview}
-                />
+                <PeopleHealth data={kpiData} />
               </Grid>
             </Grid>
           </Stack>
