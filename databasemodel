@@ -1,0 +1,105 @@
+USE [KPI]
+GO
+
+/****** Object:  View [dbo].[vw_Employee_KPI_All]    Script Date: 9/24/2025 9:46:08 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   VIEW [dbo].[vw_Employee_KPI_All]
+AS
+SELECT
+    Year,
+    MonthNumber,
+    'VFS' + CAST(StoreIdentifier AS VARCHAR(10)) AS StoreID,  -- VFS + numeric ID
+    TotalSales,
+    Start_Headcount,
+    End_Headcount,
+    Terminations,
+    Turnover,
+    AvgHeadcount,
+    SalesPerEmployee,
+    HeadcountGrowthPct
+FROM dbo.Employee_Sales_KPI
+
+UNION ALL
+
+SELECT
+    Year,
+    MonthNumber,
+    DepartmentCode AS StoreID,   -- already in format like VFSDEPO, VFSADM
+    NULL AS TotalSales,
+    Start_Headcount,
+    End_Headcount,
+    Terminations,
+    Turnover,
+    AvgHeadcount,
+    NULL AS SalesPerEmployee,
+    HeadcountGrowthPct
+FROM dbo.Employee_Department_KPI;
+GO
+
+
+USE [KPI]
+GO
+
+/****** Object:  Table [dbo].[MonthlyBillsRaw]    Script Date: 9/24/2025 9:46:22 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[MonthlyBillsRaw](
+	[StoreId] [int] NULL,
+	[EntryDate] [date] NULL,
+	[EntryTime] [varchar](8) NULL,
+	[ReceiptId] [varchar](50) NULL,
+	[LoyaltyCard] [nvarchar](100) NULL,
+	[BillTotal] [decimal](18, 2) NULL
+) ON [PRIMARY]
+GO
+
+USE [KPI]
+GO
+
+/****** Object:  Table [dbo].[Sales_by_Month]    Script Date: 9/24/2025 9:46:28 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[Sales_by_Month](
+	[SalesYear] [int] NULL,
+	[SalesMonth] [nvarchar](30) NULL,
+	[SalesMonthNumber] [int] NULL,
+	[StoreID] [varchar](50) NULL,
+	[GrossSales] [decimal](38, 4) NULL
+) ON [PRIMARY]
+GO
+
+
+USE [KPI]
+GO
+
+/****** Object:  Table [dbo].[raw_Stores]    Script Date: 9/24/2025 9:46:38 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[raw_Stores](
+	[StoreID] [int] NULL,
+	[Department_Name] [nvarchar](255) NULL,
+	[SQM] [decimal](18, 2) NULL,
+	[Longitude] [decimal](18, 8) NULL,
+	[Latitude] [decimal](18, 8) NULL,
+	[Adresse] [nvarchar](500) NULL,
+	[Format] [nvarchar](100) NULL
+) ON [PRIMARY]
+GO
+
