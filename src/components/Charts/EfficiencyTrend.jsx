@@ -11,7 +11,7 @@ import {
   Bar,
   Line,
 } from "recharts";
-import { Card, CardContent, Typography, Stack } from "@mui/material";
+import { Card, CardContent, Typography, Stack, Divider } from "@mui/material";
 
 const monthFormatter = (value) =>
   new Date(0, Number(value) - 1).toLocaleString("default", { month: "short" });
@@ -52,46 +52,79 @@ export default function EfficiencyTrend({ data }) {
   return (
     <Card
       sx={{
-        borderRadius: 3,
-        boxShadow: "none",
-        border: (theme) => `1px solid ${theme.palette.divider}`,
-        backgroundColor: (theme) => theme.palette.background.paper,
+        borderRadius: 4,
+        boxShadow: "0 10px 36px rgba(15, 23, 42, 0.09)",
+        border: "none",
+        background: (theme) =>
+          theme.palette.mode === "dark"
+            ? `linear-gradient(140deg, ${theme.palette.grey[900]}, ${theme.palette.grey[800]})`
+            : "linear-gradient(140deg, #ecfdf5, #f0fdf4)",
       }}
     >
-      <CardContent>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "flex-start", sm: "center" }}
-          spacing={1.5}
-          mb={2}
-        >
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Efficiency trend
-          </Typography>
-          {year && (
-            <Typography variant="body2" color="text.secondary">
-              FY {year}
+      <CardContent sx={{ px: { xs: 3, md: 4 }, py: { xs: 3, md: 4 } }}>
+        <Stack spacing={2.5} mb={3}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            justifyContent="space-between"
+            alignItems={{ xs: "flex-start", sm: "center" }}
+            spacing={1.5}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 0.3 }}>
+              Efficiency trend
             </Typography>
-          )}
+            {year && (
+              <Typography variant="body2" color="text.secondary">
+                FY {year}
+              </Typography>
+            )}
+          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            Visualize productivity alongside staffing changes to spot months where
+            efficiency gains or losses align with headcount shifts.
+          </Typography>
         </Stack>
-        <ResponsiveContainer width="100%" height={360}>
-          <ComposedChart data={enhancedData}>
-            <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-            <XAxis dataKey="MonthNumber" tickFormatter={monthFormatter} />
+        <Divider sx={{ opacity: 0.2, mb: 3 }} />
+        <ResponsiveContainer width="100%" height={400}>
+          <ComposedChart
+            data={enhancedData}
+            margin={{ top: 10, right: 24, left: 8, bottom: 0 }}
+          >
+            <defs>
+              <linearGradient id="salesPerEmployeeGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="4 8" stroke="rgba(15, 23, 42, 0.08)" />
+            <XAxis
+              dataKey="MonthNumber"
+              tickFormatter={monthFormatter}
+              tickLine={false}
+              axisLine={false}
+            />
             {hasLeftSeries && (
               <YAxis
                 yAxisId="left"
-                stroke="#0ea5e9"
+                stroke="#0284c7"
                 tickFormatter={(value) => `$${value.toFixed(0)}`}
+                axisLine={false}
+                tickLine={false}
+                label={{
+                  value: "Sales per employee",
+                  angle: -90,
+                  position: "insideLeft",
+                }}
               />
             )}
             {hasRightSeries && (
               <YAxis
                 yAxisId="right"
                 orientation="right"
-                stroke="#22c55e"
+                stroke="#16a34a"
                 tickFormatter={(value) => value.toFixed(0)}
+                axisLine={false}
+                tickLine={false}
+                label={{ value: "Headcount", angle: 90, position: "insideRight" }}
               />
             )}
             <Tooltip
@@ -114,18 +147,23 @@ export default function EfficiencyTrend({ data }) {
                 }
                 return [value, name];
               }}
+              contentStyle={{
+                borderRadius: 12,
+                border: "1px solid rgba(148, 163, 184, 0.35)",
+                boxShadow: "0 8px 20px rgba(15, 23, 42, 0.1)",
+              }}
             />
-            <Legend />
+            <Legend wrapperStyle={{ paddingTop: 12 }} iconType="circle" />
             {hasSalesPerEmployee && (
               <Area
                 yAxisId="left"
                 type="monotone"
                 dataKey="SalesPerEmployee"
-                name="Store Sales per Employee"
-                stroke="#0ea5e9"
-                fill="#0ea5e933"
+                name="Store sales per employee"
+                stroke="#0284c7"
+                fill="url(#salesPerEmployeeGradient)"
                 strokeWidth={3}
-                activeDot={{ r: 6 }}
+                activeDot={{ r: 7 }}
               />
             )}
             {hasChainSalesPerEmployee && (
@@ -133,10 +171,10 @@ export default function EfficiencyTrend({ data }) {
                 yAxisId="left"
                 type="monotone"
                 dataKey="ChainAvgSalesPerEmployee"
-                name="Chain Avg Sales per Employee"
+                name="Chain avg sales per employee"
                 stroke="#38bdf8"
                 strokeWidth={3}
-                strokeDasharray="5 5"
+                strokeDasharray="10 6"
                 dot={false}
               />
             )}
@@ -144,10 +182,10 @@ export default function EfficiencyTrend({ data }) {
               <Bar
                 yAxisId="right"
                 dataKey="AvgHeadcount"
-                name="Store Avg Headcount"
+                name="Store avg headcount"
                 fill="#22c55e"
-                radius={[12, 12, 0, 0]}
-                barSize={28}
+                radius={[16, 16, 0, 0]}
+                barSize={32}
               />
             )}
             {hasChainAvgHeadcount && (
@@ -155,10 +193,10 @@ export default function EfficiencyTrend({ data }) {
                 yAxisId="right"
                 type="monotone"
                 dataKey="ChainAvgHeadcount"
-                name="Chain Avg Headcount"
+                name="Chain avg headcount"
                 stroke="#4ade80"
                 strokeWidth={3}
-                strokeDasharray="3 6"
+                strokeDasharray="6 6"
                 dot={false}
               />
             )}
