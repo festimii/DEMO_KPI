@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Box, CssBaseline } from "@mui/material";
+import { Box, CssBaseline, Grid, Container } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
@@ -7,6 +7,7 @@ import Sidebar from "./Sidebar";
 export default function Layout({ children, darkMode, onToggleDarkMode }) {
   const [open, setOpen] = useState(true);
 
+  // Theme configuration
   const theme = useMemo(
     () =>
       createTheme({
@@ -22,9 +23,7 @@ export default function Layout({ children, darkMode, onToggleDarkMode }) {
             paper: darkMode ? "#141c2c" : "#ffffff",
           },
         },
-        shape: {
-          borderRadius: 16,
-        },
+        shape: { borderRadius: 16 },
         typography: {
           fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif",
         },
@@ -39,11 +38,7 @@ export default function Layout({ children, darkMode, onToggleDarkMode }) {
               },
             },
           },
-          MuiPaper: {
-            defaultProps: {
-              elevation: 0,
-            },
-          },
+          MuiPaper: { defaultProps: { elevation: 0 } },
         },
       }),
     [darkMode]
@@ -52,32 +47,46 @@ export default function Layout({ children, darkMode, onToggleDarkMode }) {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box
-        sx={{
-          display: "flex",
-          minHeight: "100vh",
-          bgcolor: "transparent",
-        }}
-      >
+      <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "transparent" }}>
+        {/* Navbar & Sidebar */}
         <Navbar
           toggleSidebar={() => setOpen(!open)}
           darkMode={darkMode}
           onToggleDarkMode={onToggleDarkMode}
         />
         <Sidebar open={open} />
+
+        {/* Main content */}
         <Box
           component="main"
           sx={{
             flexGrow: 1,
-            p: { xs: 3, md: 6 },
             mt: { xs: 10, md: 12 },
-            width: "100%",
-            maxWidth: "1440px",
-            mx: "auto",
             transition: "padding 0.3s ease",
           }}
         >
-          {children}
+          <Container maxWidth="xl" sx={{ py: 4 }}>
+            <Grid container spacing={4}>
+              {React.Children.map(children, (child, index) => (
+                <Grid item xs={12} key={index}>
+                  <Box
+                    sx={{
+                      width: "100%",
+                      minHeight: 500, // ✅ ensures charts are tall enough
+                      bgcolor: "background.paper",
+                      borderRadius: 2,
+                      p: 3,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {child}
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          </Container>
         </Box>
       </Box>
     </ThemeProvider>

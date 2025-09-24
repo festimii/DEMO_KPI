@@ -18,10 +18,10 @@ app.get("/api/kpis/stores", async (req, res) => {
   SELECT
     StoreID,
     SUM(TotalSales) AS TotalSalesYear,
-    ROUND(AVG(TRY_CAST(SalesPerEmployee AS FLOAT)), 0) AS AvgSalesPerEmployee,  -- ✅ rounded
-    ROUND(AVG(TRY_CAST(HeadcountGrowthPct AS FLOAT)), 0) AS AvgGrowth           -- ✅ rounded
+    ROUND(AVG(TRY_CAST(SalesPerEmployee AS FLOAT)), 0) AS AvgSalesPerEmployee,
+    ROUND(AVG(TRY_CAST(HeadcountGrowthPct AS FLOAT)), 0) AS AvgGrowth
   FROM dbo.vw_Employee_KPI_All
-  WHERE Year = @year
+  WHERE [Year] = @year       -- ✅ escape reserved word
   GROUP BY StoreID
 ),
 PreviousYear AS (
@@ -29,7 +29,7 @@ PreviousYear AS (
     StoreID,
     SUM(TotalSales) AS TotalSalesYear
   FROM dbo.vw_Employee_KPI_All
-  WHERE Year = @previousYear
+  WHERE [Year] = @previousYear
   GROUP BY StoreID
 ),
 ChainTotals AS (
@@ -37,20 +37,22 @@ ChainTotals AS (
 )
 SELECT
   c.StoreID,
-  ROUND(c.TotalSalesYear, 0) AS TotalSalesYear,                 -- ✅ rounded
+  ROUND(c.TotalSalesYear, 0) AS TotalSalesYear,
   c.AvgSalesPerEmployee,
   c.AvgGrowth,
-  ROUND(p.TotalSalesYear, 0) AS PrevYearSales,                  -- ✅ rounded
+  ROUND(p.TotalSalesYear, 0) AS PrevYearSales,
   ROUND(
     CASE
       WHEN p.TotalSalesYear IS NULL OR p.TotalSalesYear = 0 THEN NULL
       ELSE ((c.TotalSalesYear - p.TotalSalesYear) / p.TotalSalesYear) * 100
-    END, 0) AS SalesYoY,                                        -- ✅ rounded
+    END, 0
+  ) AS SalesYoY,
   ROUND(
     CASE
       WHEN totals.ChainSales IS NULL OR totals.ChainSales = 0 THEN NULL
       ELSE (c.TotalSalesYear / totals.ChainSales) * 100
-    END, 0) AS SalesContributionPct                             -- ✅ rounded
+    END, 0
+  ) AS SalesContributionPct
 FROM CurrentYear c
 LEFT JOIN PreviousYear p ON p.StoreID = c.StoreID
 CROSS JOIN ChainTotals totals
@@ -79,21 +81,21 @@ app.get("/api/kpis/store/:id", async (req, res) => {
     const previousYear = currentYear - 1;
 
     const query = `
-       WITH StoreData AS (
+WITH StoreData AS (
   SELECT
-    Year,
+    [Year],
     MonthNumber,
     StoreID,
     TotalSales,
     TRY_CAST(AvgHeadcount AS FLOAT) AS AvgHeadcount,
     TRY_CAST(SalesPerEmployee AS FLOAT) AS SalesPerEmployee,
     TRY_CAST(HeadcountGrowthPct AS FLOAT) AS HeadcountGrowthPct,
-    TRY_CAST(Turnover AS FLOAT) AS Turnover
+    TRY_CAST(TurnoverPct AS FLOAT) AS Turnover  -- ✅ use TurnoverPct from the view
   FROM dbo.vw_Employee_KPI_All
-  WHERE Year = @year AND StoreID = @storeId
+  WHERE [Year] = @year AND StoreID = @storeId
 )
 SELECT
-  sd.Year,
+  sd.[Year],
   sd.MonthNumber,
   sd.StoreID,
   ROUND(sd.TotalSales, 0) AS TotalSales,
@@ -120,24 +122,25 @@ CROSS APPLY (
     AVG(TRY_CAST(v.SalesPerEmployee AS FLOAT)) AS ChainAvgSalesPerEmployee,
     AVG(TRY_CAST(v.AvgHeadcount AS FLOAT)) AS ChainAvgHeadcount,
     AVG(TRY_CAST(v.HeadcountGrowthPct AS FLOAT)) AS ChainAvgGrowth,
-    AVG(TRY_CAST(v.Turnover AS FLOAT)) AS ChainAvgTurnover,
+    AVG(TRY_CAST(v.TurnoverPct AS FLOAT)) AS ChainAvgTurnover,  -- ✅ use TurnoverPct
     COUNT(*) AS ChainStoreCount
   FROM dbo.vw_Employee_KPI_All v
-  WHERE v.Year = sd.Year AND v.MonthNumber = sd.MonthNumber
+  WHERE v.[Year] = sd.[Year] AND v.MonthNumber = sd.MonthNumber
 ) totals
 OUTER APPLY (
   SELECT TOP 1
     v.TotalSales AS PrevYearTotalSales,
     TRY_CAST(v.SalesPerEmployee AS FLOAT) AS PrevYearSalesPerEmployee,
     TRY_CAST(v.HeadcountGrowthPct AS FLOAT) AS PrevYearHeadcountGrowth,
-    TRY_CAST(v.Turnover AS FLOAT) AS PrevYearTurnover
+    TRY_CAST(v.TurnoverPct AS FLOAT) AS PrevYearTurnover  -- ✅ use TurnoverPct
   FROM dbo.vw_Employee_KPI_All v
-  WHERE v.Year = @previousYear
+  WHERE v.[Year] = @previousYear
     AND v.MonthNumber = sd.MonthNumber
     AND v.StoreID = sd.StoreID
-  ORDER BY v.Year DESC
+  ORDER BY v.[Year] DESC
 ) prev
 ORDER BY sd.MonthNumber;
+
 
       `;
 
@@ -163,18 +166,19 @@ app.get("/api/kpis/store/:id/turnover", async (req, res) => {
 
     let query = `
       SELECT
-        Year,
-        Month,
-        MonthNumber,
-        StoreID,
-        JobTitle,
-        Gender,
-        Start_Headcount,
-        End_Headcount,
-        Terminations,
-        TurnoverPct
-      FROM dbo.vw_Employee_Turnover_ByJobTitle
-      WHERE StoreID = @storeId AND Year = @year
+  Year,
+  Month,
+  MonthNumber,
+  CAST('VFS' + CAST(StoreID AS VARCHAR(10)) AS VARCHAR(50)) AS StoreID,  -- always VFS##
+  JobTitle,
+  Gender,
+  Start_Headcount,
+  End_Headcount,
+  Terminations,
+  TurnoverPct
+FROM dbo.vw_Employee_Turnover_ByJobTitle
+WHERE StoreID = @storeId AND Year = @year
+
     `;
 
     if (hasMonthFilter) {
