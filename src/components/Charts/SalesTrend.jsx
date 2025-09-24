@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Card, CardContent, Typography, Stack } from "@mui/material";
+import { Card, CardContent, Typography, Stack, Divider } from "@mui/material";
 
 const monthFormatter = (value) =>
   new Date(0, Number(value) - 1).toLocaleString("default", { month: "short" });
@@ -64,42 +64,62 @@ export default function SalesTrend({ data, storeId }) {
   return (
     <Card
       sx={{
-        borderRadius: 3,
-        boxShadow: "none",
-        border: (theme) => `1px solid ${theme.palette.divider}`,
-        backgroundColor: (theme) => theme.palette.background.paper,
+        borderRadius: 4,
+        boxShadow: "0 12px 40px rgba(15, 23, 42, 0.08)",
+        border: "none",
+        background: (theme) =>
+          theme.palette.mode === "dark"
+            ? `linear-gradient(135deg, ${theme.palette.grey[900]}, ${theme.palette.grey[800]})`
+            : "linear-gradient(135deg, #eff6ff, #eef2ff)",
       }}
     >
-      <CardContent>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "flex-start", sm: "center" }}
-          spacing={1.5}
-          mb={2}
-        >
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Revenue trend
-          </Typography>
-          {(storeId || year) && (
-            <Typography variant="body2" color="text.secondary">
-              {[storeId && `Store ${storeId}`, year && `FY ${year}`]
-                .filter(Boolean)
-                .join(" · ")}
+      <CardContent sx={{ px: { xs: 3, md: 4 }, py: { xs: 3, md: 4 } }}>
+        <Stack spacing={2} mb={3}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            justifyContent="space-between"
+            alignItems={{ xs: "flex-start", sm: "center" }}
+            spacing={1.5}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 0.3 }}>
+              Revenue trend
             </Typography>
-          )}
+            {(storeId || year) && (
+              <Typography variant="body2" color="text.secondary">
+                {[storeId && `Store ${storeId}`, year && `FY ${year}`]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </Typography>
+            )}
+          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            Track how your store compares to the chain average across revenue and
+            productivity metrics each month.
+          </Typography>
         </Stack>
-        <ResponsiveContainer width="100%" height={380}>
-          <LineChart data={enrichedData}>
-            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-            <XAxis dataKey="MonthNumber" tickFormatter={monthFormatter} />
+        <Divider sx={{ opacity: 0.25, mb: 3 }} />
+        <ResponsiveContainer width="100%" height={440}>
+          <LineChart
+            data={enrichedData}
+            margin={{ top: 10, right: 24, left: 8, bottom: 0 }}
+          >
+            <CartesianGrid strokeDasharray="4 8" stroke="rgba(15, 23, 42, 0.08)" />
+            <XAxis
+              dataKey="MonthNumber"
+              tickFormatter={monthFormatter}
+              tickLine={false}
+              axisLine={false}
+            />
             {hasLeftSeries && (
               <YAxis
                 yAxisId="left"
                 tickFormatter={(value) =>
                   value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value
                 }
-                stroke="#2563eb"
+                stroke="#1d4ed8"
+                axisLine={false}
+                tickLine={false}
+                label={{ value: "Revenue", angle: -90, position: "insideLeft" }}
               />
             )}
             {hasRightSeries && (
@@ -107,7 +127,14 @@ export default function SalesTrend({ data, storeId }) {
                 yAxisId="right"
                 orientation="right"
                 tickFormatter={(value) => `$${value.toFixed(0)}`}
-                stroke="#f59e0b"
+                stroke="#ea580c"
+                axisLine={false}
+                tickLine={false}
+                label={{
+                  value: "Sales per employee",
+                  angle: 90,
+                  position: "insideRight",
+                }}
               />
             )}
             <Tooltip
@@ -128,18 +155,23 @@ export default function SalesTrend({ data, storeId }) {
                 return [val, name];
               }}
               labelFormatter={(label) => monthFormatter(label)}
+              contentStyle={{
+                borderRadius: 12,
+                border: "1px solid rgba(148, 163, 184, 0.35)",
+                boxShadow: "0 8px 20px rgba(15, 23, 42, 0.1)",
+              }}
             />
-            <Legend />
+            <Legend wrapperStyle={{ paddingTop: 12 }} iconType="circle" />
             {hasTotalSales && (
               <Line
                 yAxisId="left"
                 type="monotone"
                 dataKey="TotalSales"
-                name="Store Total Sales"
-                stroke="#2563eb"
-                strokeWidth={3}
-                dot={{ r: 3 }}
-                activeDot={{ r: 6 }}
+                name="Store total sales"
+                stroke="#1d4ed8"
+                strokeWidth={3.2}
+                dot={{ r: 4 }}
+                activeDot={{ r: 7 }}
               />
             )}
             {hasChainSales && (
@@ -147,10 +179,10 @@ export default function SalesTrend({ data, storeId }) {
                 yAxisId="left"
                 type="monotone"
                 dataKey="ChainAvgSales"
-                name="Chain Avg Sales"
+                name="Chain avg sales"
                 stroke="#60a5fa"
                 strokeWidth={3}
-                strokeDasharray="6 6"
+                strokeDasharray="10 6"
                 dot={false}
               />
             )}
@@ -159,11 +191,11 @@ export default function SalesTrend({ data, storeId }) {
                 yAxisId="right"
                 type="monotone"
                 dataKey="SalesPerEmployee"
-                name="Store Sales per Employee"
-                stroke="#f59e0b"
+                name="Store sales per employee"
+                stroke="#ea580c"
                 strokeWidth={3}
-                dot={{ r: 3 }}
-                activeDot={{ r: 6 }}
+                dot={{ r: 4 }}
+                activeDot={{ r: 7 }}
               />
             )}
             {hasChainSalesPerEmployee && (
@@ -171,10 +203,10 @@ export default function SalesTrend({ data, storeId }) {
                 yAxisId="right"
                 type="monotone"
                 dataKey="ChainAvgSalesPerEmployee"
-                name="Chain Avg Sales per Employee"
-                stroke="#facc15"
+                name="Chain avg sales per employee"
+                stroke="#fb923c"
                 strokeWidth={3}
-                strokeDasharray="4 4"
+                strokeDasharray="6 6"
                 dot={false}
               />
             )}
