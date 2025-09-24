@@ -1,9 +1,12 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Box, CssBaseline } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import Navbar from "./Navbar";
+import Sidebar from "./Sidebar";
 
 export default function Layout({ children, darkMode, onToggleDarkMode }) {
+  const [open, setOpen] = useState(true);
+
   const theme = useMemo(
     () =>
       createTheme({
@@ -15,8 +18,8 @@ export default function Layout({ children, darkMode, onToggleDarkMode }) {
             dark: "#312e81",
           },
           background: {
-            default: darkMode ? "#0f172a" : "#f3f4f6",
-            paper: darkMode ? "#111827" : "#ffffff",
+            default: darkMode ? "#0b1220" : "#f5f7fb",
+            paper: darkMode ? "#141c2c" : "#ffffff",
           },
         },
         shape: {
@@ -29,8 +32,16 @@ export default function Layout({ children, darkMode, onToggleDarkMode }) {
           MuiCssBaseline: {
             styleOverrides: {
               body: {
-                backgroundColor: darkMode ? "#0f172a" : "#f3f4f6",
+                backgroundColor: darkMode ? "#0b1220" : "#eef2ff",
+                backgroundImage: darkMode
+                  ? "radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.15), transparent 45%), radial-gradient(circle at 100% 0%, rgba(129, 140, 248, 0.12), transparent 50%)"
+                  : "linear-gradient(180deg, rgba(224, 231, 255, 0.65) 0%, rgba(249, 250, 251, 0.9) 100%)",
               },
+            },
+          },
+          MuiPaper: {
+            defaultProps: {
+              elevation: 0,
             },
           },
         },
@@ -41,16 +52,29 @@ export default function Layout({ children, darkMode, onToggleDarkMode }) {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
-        <Navbar darkMode={darkMode} onToggleDarkMode={onToggleDarkMode} />
+      <Box
+        sx={{
+          display: "flex",
+          minHeight: "100vh",
+          bgcolor: "transparent",
+        }}
+      >
+        <Navbar
+          toggleSidebar={() => setOpen(!open)}
+          darkMode={darkMode}
+          onToggleDarkMode={onToggleDarkMode}
+        />
+        <Sidebar open={open} />
         <Box
           component="main"
           sx={{
-            px: { xs: 2, md: 4 },
-            py: { xs: 10, md: 12 },
+            flexGrow: 1,
+            p: { xs: 3, md: 6 },
+            mt: { xs: 10, md: 12 },
             width: "100%",
-            maxWidth: "1080px",
+            maxWidth: "1320px",
             mx: "auto",
+            transition: "padding 0.3s ease",
           }}
         >
           {children}

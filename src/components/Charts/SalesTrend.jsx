@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Card, CardContent, Typography, Stack } from "@mui/material";
+import { Card, CardContent, Typography, Stack, Chip } from "@mui/material";
 
 const monthFormatter = (value) =>
   new Date(0, Number(value) - 1).toLocaleString("default", { month: "short" });
@@ -47,32 +47,26 @@ export default function SalesTrend({ data, storeId }) {
     };
   });
 
-  const hasTotalSales = enrichedData.some((item) => item.TotalSales != null);
-  const hasChainAvgSales = enrichedData.some((item) => item.ChainAvgSales != null);
-  const hasSalesPerEmployee = enrichedData.some((item) => item.SalesPerEmployee != null);
-  const hasChainAvgSalesPerEmployee = enrichedData.some(
-    (item) => item.ChainAvgSalesPerEmployee != null
-  );
-
-  const showChart =
-    hasTotalSales || hasChainAvgSales || hasSalesPerEmployee || hasChainAvgSalesPerEmployee;
-
   return (
-    <Card elevation={0} sx={{ borderRadius: 3, border: (theme) => `1px solid ${theme.palette.divider}` }}>
+    <Card sx={{ borderRadius: 4, boxShadow: "0 18px 40px rgba(15,23,42,0.1)" }}>
       <CardContent>
-        <Stack spacing={0.5} mb={3}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Revenue trend
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Monthly results for store {storeId} in {year}.
-          </Typography>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          justifyContent="space-between"
+          alignItems="flex-start"
+          mb={3}
+        >
+          <div>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>
+              Revenue & Efficiency Trend
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Tracking monthly performance for store {storeId} in {year}.
+            </Typography>
+          </div>
+          <Chip label="Store vs. chain benchmarks" color="primary" variant="outlined" />
         </Stack>
-        {!showChart ? (
-          <Typography variant="body2" color="text.secondary">
-            No sales or productivity data is available yet.
-          </Typography>
-        ) : (
         <ResponsiveContainer width="100%" height={380}>
           <LineChart data={enrichedData}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
@@ -110,57 +104,48 @@ export default function SalesTrend({ data, storeId }) {
               labelFormatter={(label) => monthFormatter(label)}
             />
             <Legend />
-            {hasTotalSales && (
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="TotalSales"
-                name="Store Total Sales"
-                stroke="#2563eb"
-                strokeWidth={3}
-                dot={{ r: 3 }}
-                activeDot={{ r: 6 }}
-              />
-            )}
-            {hasChainAvgSales && (
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="ChainAvgSales"
-                name="Chain Avg Sales"
-                stroke="#60a5fa"
-                strokeWidth={3}
-                strokeDasharray="6 6"
-                dot={false}
-              />
-            )}
-            {hasSalesPerEmployee && (
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="SalesPerEmployee"
-                name="Store Sales per Employee"
-                stroke="#f59e0b"
-                strokeWidth={3}
-                dot={{ r: 3 }}
-                activeDot={{ r: 6 }}
-              />
-            )}
-            {hasChainAvgSalesPerEmployee && (
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="ChainAvgSalesPerEmployee"
-                name="Chain Avg Sales per Employee"
-                stroke="#facc15"
-                strokeWidth={3}
-                strokeDasharray="4 4"
-                dot={false}
-              />
-            )}
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="TotalSales"
+              name="Store Total Sales"
+              stroke="#2563eb"
+              strokeWidth={3}
+              dot={{ r: 3 }}
+              activeDot={{ r: 6 }}
+            />
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="ChainAvgSales"
+              name="Chain Avg Sales"
+              stroke="#60a5fa"
+              strokeWidth={3}
+              strokeDasharray="6 6"
+              dot={false}
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="SalesPerEmployee"
+              name="Store Sales per Employee"
+              stroke="#f59e0b"
+              strokeWidth={3}
+              dot={{ r: 3 }}
+              activeDot={{ r: 6 }}
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="ChainAvgSalesPerEmployee"
+              name="Chain Avg Sales per Employee"
+              stroke="#facc15"
+              strokeWidth={3}
+              strokeDasharray="4 4"
+              dot={false}
+            />
           </LineChart>
         </ResponsiveContainer>
-        )}
       </CardContent>
     </Card>
   );
