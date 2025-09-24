@@ -43,3 +43,27 @@ coverage/
 
 # Misc
 *.tgz
+
+
+# ===============================
+# Frontend (Vite + React)
+# ===============================
+# Already covered by dist/
+# Add extra if you use storybook or test reports
+storybook-static/
+.vite/
+
+# ===============================
+# Backend (Express + MSSQL)
+# ===============================
+kpi-backend/node_modules/
+kpi-backend/dist/
+kpi-backend/build/
+kpi-backend/.env
+kpi-backend/*.bak
+kpi-backend/*.sql
+kpi-backend/*.mdf
+kpi-backend/*.ldf
+
+# Keep the folder itself tracked even if empty
+!kpi-backend/.gitkeep
