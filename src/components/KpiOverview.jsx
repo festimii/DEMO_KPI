@@ -16,16 +16,23 @@ const toNumber = (value) => {
   return Number.isFinite(numeric) ? numeric : null;
 };
 
-const formatPercent = (value) => {
-  const numeric = toNumber(value);
-  return numeric != null ? `${numeric.toFixed(1)}%` : null;
-};
+function calculateChange(current, previous) {
+  const currentValue = toNumber(current);
+  const previousValue = toNumber(previous);
 
-const formatPeopleMetric = (value) => {
-  const numeric = toNumber(value);
-  if (numeric == null) return null;
-  return numeric.toFixed(1);
-};
+  if (
+    currentValue == null ||
+    previousValue == null ||
+    previousValue === 0 ||
+    Number.isNaN(currentValue) ||
+    Number.isNaN(previousValue)
+  ) {
+    return null;
+  }
+
+  const percentage = ((currentValue - previousValue) / Math.abs(previousValue)) * 100;
+  return Number.isFinite(percentage) ? Number(percentage.toFixed(1)) : null;
+}
 
 export default function KpiOverview({ data }) {
   if (!data || data.length === 0) {
@@ -38,75 +45,83 @@ export default function KpiOverview({ data }) {
     );
   }
 
+  // Latest and previous records
   const latest = data[data.length - 1];
   const previous = data.length > 1 ? data[data.length - 2] : null;
 
-  const latestTotalSales = toNumber(latest.TotalSales);
-  const prevTotalSales = previous ? toNumber(previous.TotalSales) : null;
-  const prevYearTotalSales = toNumber(latest.PrevYearTotalSales);
+  const totalSales = toNumber(latest.TotalSales);
+  const prevSales = previous ? toNumber(previous.TotalSales) : null;
   const chainAvgSales = toNumber(latest.ChainAvgSales);
+  const prevYearSales = toNumber(latest.PrevYearTotalSales);
 
-  const latestAvgHeadcount = toNumber(latest.AvgHeadcount);
-  const prevAvgHeadcount = previous ? toNumber(previous.AvgHeadcount) : null;
+  const avgHeadcount = toNumber(latest.AvgHeadcount);
+  const prevHeadcount = previous ? toNumber(previous.AvgHeadcount) : null;
   const chainAvgHeadcount = toNumber(latest.ChainAvgHeadcount);
 
-  const latestSalesPerEmployee = toNumber(latest.SalesPerEmployee);
-  const prevSalesPerEmployee = previous ? toNumber(previous.SalesPerEmployee) : null;
-  const prevYearSalesPerEmployee = toNumber(latest.PrevYearSalesPerEmployee);
-  const chainAvgSalesPerEmployee = toNumber(latest.ChainAvgSalesPerEmployee);
+  const salesPerEmp = toNumber(latest.SalesPerEmployee);
+  const prevSalesPerEmp = previous ? toNumber(previous.SalesPerEmployee) : null;
+  const chainAvgSalesPerEmp = toNumber(latest.ChainAvgSalesPerEmployee);
+  const prevYearSalesPerEmp = toNumber(latest.PrevYearSalesPerEmployee);
 
-  const latestTurnover = toNumber(latest.Turnover);
+  const turnover = toNumber(latest.Turnover);
   const prevTurnover = previous ? toNumber(previous.Turnover) : null;
-  const prevYearTurnover = toNumber(latest.PrevYearTurnover);
   const chainAvgTurnover = toNumber(latest.ChainAvgTurnover);
+  const prevYearTurnover = toNumber(latest.PrevYearTurnover);
 
   const cards = [
     {
-      title: "Total sales",
-      value: latestTotalSales != null ? formatCurrency(latestTotalSales) : "—",
-      details: [
-        prevTotalSales != null ? `Prev. month: ${formatCurrency(prevTotalSales)}` : null,
-        prevYearTotalSales != null ? `Last year: ${formatCurrency(prevYearTotalSales)}` : null,
-        chainAvgSales != null ? `Chain avg: ${formatCurrency(chainAvgSales)}` : null,
-      ],
+      title: "Total Sales",
+      value: totalSales != null ? formatCurrency(totalSales) : "-",
+      change: calculateChange(totalSales, prevSales),
+      secondary: [
+        prevYearSales != null
+          ? { label: "vs last year", value: calculateChange(totalSales, prevYearSales) }
+          : null,
+        chainAvgSales != null
+          ? { label: "vs chain avg", value: calculateChange(totalSales, chainAvgSales) }
+          : null,
+      ].filter(Boolean),
     },
     {
-      title: "Avg headcount",
-      value: latestAvgHeadcount != null ? formatPeopleMetric(latestAvgHeadcount) : null,
-      details: [
-        prevAvgHeadcount != null ? `Prev. month: ${formatPeopleMetric(prevAvgHeadcount)}` : null,
-        chainAvgHeadcount != null ? `Chain avg: ${formatPeopleMetric(chainAvgHeadcount)}` : null,
-      ],
+      title: "Avg Headcount",
+      value: avgHeadcount != null ? avgHeadcount.toFixed(1) : "-",
+      change: calculateChange(avgHeadcount, prevHeadcount),
+      secondary: [
+        chainAvgHeadcount != null
+          ? { label: "vs chain avg", value: calculateChange(avgHeadcount, chainAvgHeadcount) }
+          : null,
+      ].filter(Boolean),
     },
     {
-      title: "Sales per employee",
-      value:
-        latestSalesPerEmployee != null ? `$${latestSalesPerEmployee.toFixed(0)}` : null,
-      details: [
-        prevSalesPerEmployee != null
-          ? `Prev. month: $${prevSalesPerEmployee.toFixed(0)}`
+      title: "Sales per Employee",
+      value: salesPerEmp != null ? `$${salesPerEmp.toFixed(2)}` : "-",
+      change: calculateChange(salesPerEmp, prevSalesPerEmp),
+      secondary: [
+        prevYearSalesPerEmp != null
+          ? { label: "vs last year", value: calculateChange(salesPerEmp, prevYearSalesPerEmp) }
           : null,
-        prevYearSalesPerEmployee != null
-          ? `Last year: $${prevYearSalesPerEmployee.toFixed(0)}`
+        chainAvgSalesPerEmp != null
+          ? { label: "vs chain avg", value: calculateChange(salesPerEmp, chainAvgSalesPerEmp) }
           : null,
-        chainAvgSalesPerEmployee != null
-          ? `Chain avg: $${chainAvgSalesPerEmployee.toFixed(0)}`
-          : null,
-      ],
+      ].filter(Boolean),
     },
     {
       title: "Turnover",
-      value: latestTurnover != null ? formatPercent(latestTurnover) : null,
-      details: [
-        prevTurnover != null ? `Prev. month: ${formatPercent(prevTurnover)}` : null,
-        prevYearTurnover != null ? `Last year: ${formatPercent(prevYearTurnover)}` : null,
-        chainAvgTurnover != null ? `Chain avg: ${formatPercent(chainAvgTurnover)}` : null,
-      ],
+      value: turnover != null ? turnover.toFixed(1) + "%" : "-",
+      change: calculateChange(turnover, prevTurnover),
+      secondary: [
+        prevYearTurnover != null
+          ? { label: "vs last year", value: calculateChange(turnover, prevYearTurnover) }
+          : null,
+        chainAvgTurnover != null
+          ? { label: "vs chain avg", value: calculateChange(turnover, chainAvgTurnover) }
+          : null,
+      ].filter(Boolean),
     },
   ];
 
   return (
-    <Grid container spacing={2.5}>
+    <Grid container spacing={3}>
       {cards.map((card) => (
         <Grid item xs={12} sm={6} lg={3} key={card.title}>
           <KpiCard {...card} />
