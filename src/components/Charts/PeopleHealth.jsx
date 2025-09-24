@@ -9,7 +9,7 @@ import {
   Legend,
   Line,
 } from "recharts";
-import { Card, CardContent, Typography, Stack } from "@mui/material";
+import { Card, CardContent, Typography, Stack, Divider } from "@mui/material";
 
 const monthFormatter = (value) =>
   new Date(0, Number(value) - 1).toLocaleString("default", { month: "short" });
@@ -48,38 +48,58 @@ export default function PeopleHealth({ data }) {
   return (
     <Card
       sx={{
-        borderRadius: 3,
-        boxShadow: "none",
-        border: (theme) => `1px solid ${theme.palette.divider}`,
-        backgroundColor: (theme) => theme.palette.background.paper,
+        borderRadius: 4,
+        boxShadow: "0 10px 36px rgba(15, 23, 42, 0.08)",
+        border: "none",
+        background: (theme) =>
+          theme.palette.mode === "dark"
+            ? `linear-gradient(135deg, ${theme.palette.grey[900]}, ${theme.palette.grey[800]})`
+            : "linear-gradient(135deg, #fdf2f8, #fce7f3)",
       }}
     >
-      <CardContent>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "flex-start", sm: "center" }}
-          spacing={1.5}
-          mb={2}
-        >
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            People health
-          </Typography>
-          {year && (
-            <Typography variant="body2" color="text.secondary">
-              FY {year}
+      <CardContent sx={{ px: { xs: 3, md: 4 }, py: { xs: 3, md: 4 } }}>
+        <Stack spacing={2} mb={3}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            justifyContent="space-between"
+            alignItems={{ xs: "flex-start", sm: "center" }}
+            spacing={1.5}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 0.3 }}>
+              People health
             </Typography>
-          )}
+            {year && (
+              <Typography variant="body2" color="text.secondary">
+                FY {year}
+              </Typography>
+            )}
+          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            Monitor retention and growth rates side-by-side to quickly identify
+            people risks or standout improvements.
+          </Typography>
         </Stack>
-        <ResponsiveContainer width="100%" height={360}>
-          <LineChart data={normalizedData}>
-            <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-            <XAxis dataKey="MonthNumber" tickFormatter={monthFormatter} />
+        <Divider sx={{ opacity: 0.2, mb: 3 }} />
+        <ResponsiveContainer width="100%" height={400}>
+          <LineChart
+            data={normalizedData}
+            margin={{ top: 10, right: 24, left: 8, bottom: 0 }}
+          >
+            <CartesianGrid strokeDasharray="4 8" stroke="rgba(15, 23, 42, 0.08)" />
+            <XAxis
+              dataKey="MonthNumber"
+              tickFormatter={monthFormatter}
+              tickLine={false}
+              axisLine={false}
+            />
             {hasLeftSeries && (
               <YAxis
                 yAxisId="left"
-                stroke="#8b5cf6"
+                stroke="#7c3aed"
                 tickFormatter={(value) => `${value.toFixed(1)}%`}
+                axisLine={false}
+                tickLine={false}
+                label={{ value: "Headcount growth", angle: -90, position: "insideLeft" }}
               />
             )}
             {hasRightSeries && (
@@ -88,6 +108,9 @@ export default function PeopleHealth({ data }) {
                 orientation="right"
                 stroke="#f97316"
                 tickFormatter={(value) => `${value.toFixed(1)}%`}
+                axisLine={false}
+                tickLine={false}
+                label={{ value: "Turnover", angle: 90, position: "insideRight" }}
               />
             )}
             <Tooltip
@@ -106,18 +129,24 @@ export default function PeopleHealth({ data }) {
                   default:
                     return [formattedValue, name];
                 }
-            }}
+              }}
+              contentStyle={{
+                borderRadius: 12,
+                border: "1px solid rgba(148, 163, 184, 0.35)",
+                boxShadow: "0 8px 20px rgba(15, 23, 42, 0.1)",
+              }}
             />
-            <Legend />
+            <Legend wrapperStyle={{ paddingTop: 12 }} iconType="circle" />
             {hasHeadcountGrowth && (
               <Line
                 yAxisId="left"
                 type="monotone"
                 dataKey="HeadcountGrowthPct"
-                name="Store Headcount Growth"
-                stroke="#8b5cf6"
-                strokeWidth={3}
-                dot={{ r: 3 }}
+                name="Store headcount growth"
+                stroke="#7c3aed"
+                strokeWidth={3.2}
+                dot={{ r: 4 }}
+                activeDot={{ r: 7 }}
               />
             )}
             {hasChainGrowth && (
@@ -125,10 +154,10 @@ export default function PeopleHealth({ data }) {
                 yAxisId="left"
                 type="monotone"
                 dataKey="ChainAvgGrowth"
-                name="Chain Avg Headcount Growth"
+                name="Chain avg headcount growth"
                 stroke="#c084fc"
                 strokeWidth={3}
-                strokeDasharray="5 5"
+                strokeDasharray="10 6"
                 dot={false}
               />
             )}
@@ -137,10 +166,11 @@ export default function PeopleHealth({ data }) {
                 yAxisId="right"
                 type="monotone"
                 dataKey="Turnover"
-                name="Store Turnover"
+                name="Store turnover"
                 stroke="#f97316"
                 strokeWidth={3}
-                dot={{ r: 3 }}
+                dot={{ r: 4 }}
+                activeDot={{ r: 7 }}
               />
             )}
             {hasChainTurnover && (
@@ -148,10 +178,10 @@ export default function PeopleHealth({ data }) {
                 yAxisId="right"
                 type="monotone"
                 dataKey="ChainAvgTurnover"
-                name="Chain Avg Turnover"
+                name="Chain avg turnover"
                 stroke="#fbbf24"
                 strokeWidth={3}
-                strokeDasharray="3 6"
+                strokeDasharray="6 6"
                 dot={false}
               />
             )}
