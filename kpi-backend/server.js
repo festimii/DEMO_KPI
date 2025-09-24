@@ -14,12 +14,12 @@ app.get("/api/kpis/stores", async (req, res) => {
     const previousYear = currentYear - 1;
 
     const query = `
-    WITH CurrentYear AS (
+   WITH CurrentYear AS (
   SELECT
     StoreID,
     SUM(TotalSales) AS TotalSalesYear,
-    AVG(TRY_CAST(SalesPerEmployee AS FLOAT)) AS AvgSalesPerEmployee,
-    AVG(TRY_CAST(HeadcountGrowthPct AS FLOAT)) AS AvgGrowth
+    ROUND(AVG(TRY_CAST(SalesPerEmployee AS FLOAT)), 0) AS AvgSalesPerEmployee,  -- ✅ rounded
+    ROUND(AVG(TRY_CAST(HeadcountGrowthPct AS FLOAT)), 0) AS AvgGrowth           -- ✅ rounded
   FROM dbo.vw_Employee_KPI_All
   WHERE Year = @year
   GROUP BY StoreID
@@ -37,22 +37,25 @@ ChainTotals AS (
 )
 SELECT
   c.StoreID,
-  c.TotalSalesYear,
+  ROUND(c.TotalSalesYear, 0) AS TotalSalesYear,                 -- ✅ rounded
   c.AvgSalesPerEmployee,
   c.AvgGrowth,
-  p.TotalSalesYear AS PrevYearSales,
-  CASE
-    WHEN p.TotalSalesYear IS NULL OR p.TotalSalesYear = 0 THEN NULL
-    ELSE ((c.TotalSalesYear - p.TotalSalesYear) / p.TotalSalesYear) * 100
-  END AS SalesYoY,
-  CASE
-    WHEN totals.ChainSales IS NULL OR totals.ChainSales = 0 THEN NULL
-    ELSE (c.TotalSalesYear / totals.ChainSales) * 100
-  END AS SalesContributionPct
+  ROUND(p.TotalSalesYear, 0) AS PrevYearSales,                  -- ✅ rounded
+  ROUND(
+    CASE
+      WHEN p.TotalSalesYear IS NULL OR p.TotalSalesYear = 0 THEN NULL
+      ELSE ((c.TotalSalesYear - p.TotalSalesYear) / p.TotalSalesYear) * 100
+    END, 0) AS SalesYoY,                                        -- ✅ rounded
+  ROUND(
+    CASE
+      WHEN totals.ChainSales IS NULL OR totals.ChainSales = 0 THEN NULL
+      ELSE (c.TotalSalesYear / totals.ChainSales) * 100
+    END, 0) AS SalesContributionPct                             -- ✅ rounded
 FROM CurrentYear c
 LEFT JOIN PreviousYear p ON p.StoreID = c.StoreID
 CROSS JOIN ChainTotals totals
 ORDER BY c.TotalSalesYear DESC;
+
 
        `;
 
@@ -93,22 +96,22 @@ SELECT
   sd.Year,
   sd.MonthNumber,
   sd.StoreID,
-  sd.TotalSales,
-  sd.AvgHeadcount,
-  sd.SalesPerEmployee,
-  sd.HeadcountGrowthPct,
-  sd.Turnover,
-  totals.ChainTotalSales,
-  totals.ChainAvgSales,
-  totals.ChainAvgSalesPerEmployee,
-  totals.ChainAvgHeadcount,
-  totals.ChainAvgGrowth,
-  totals.ChainAvgTurnover,
+  ROUND(sd.TotalSales, 0) AS TotalSales,
+  ROUND(sd.AvgHeadcount, 0) AS AvgHeadcount,
+  ROUND(sd.SalesPerEmployee, 0) AS SalesPerEmployee,
+  ROUND(sd.HeadcountGrowthPct, 0) AS HeadcountGrowthPct,
+  ROUND(sd.Turnover, 0) AS Turnover,
+  ROUND(totals.ChainTotalSales, 0) AS ChainTotalSales,
+  ROUND(totals.ChainAvgSales, 0) AS ChainAvgSales,
+  ROUND(totals.ChainAvgSalesPerEmployee, 0) AS ChainAvgSalesPerEmployee,
+  ROUND(totals.ChainAvgHeadcount, 0) AS ChainAvgHeadcount,
+  ROUND(totals.ChainAvgGrowth, 0) AS ChainAvgGrowth,
+  ROUND(totals.ChainAvgTurnover, 0) AS ChainAvgTurnover,
   totals.ChainStoreCount,
-  prev.PrevYearTotalSales,
-  prev.PrevYearSalesPerEmployee,
-  prev.PrevYearHeadcountGrowth,
-  prev.PrevYearTurnover
+  ROUND(prev.PrevYearTotalSales, 0) AS PrevYearTotalSales,
+  ROUND(prev.PrevYearSalesPerEmployee, 0) AS PrevYearSalesPerEmployee,
+  ROUND(prev.PrevYearHeadcountGrowth, 0) AS PrevYearHeadcountGrowth,
+  ROUND(prev.PrevYearTurnover, 0) AS PrevYearTurnover
 FROM StoreData sd
 CROSS APPLY (
   SELECT
