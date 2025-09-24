@@ -2,9 +2,18 @@ import React from "react";
 import { Grid, Typography, Box } from "@mui/material";
 import KpiCard from "./KpiCard";
 
+// Helper: calculate change between two numbers
 function calculateChange(current, previous) {
-  if (previous === 0 || previous === undefined || previous === null) return null;
-  return ((current - previous) / Math.abs(previous)) * 100;
+  if (
+    current == null ||
+    previous == null ||
+    previous === 0 ||
+    isNaN(current) ||
+    isNaN(previous)
+  ) {
+    return null;
+  }
+  return (((current - previous) / Math.abs(previous)) * 100).toFixed(1);
 }
 
 export default function KpiOverview({ data }) {
@@ -18,33 +27,43 @@ export default function KpiOverview({ data }) {
     );
   }
 
+  // Latest and previous records
   const latest = data[data.length - 1];
   const previous = data.length > 1 ? data[data.length - 2] : null;
+
+  // Parse values safely
+  const totalSales = latest.TotalSales ?? null;
+  const prevSales = previous ? previous.TotalSales : null;
+
+  const avgHeadcount = latest.AvgHeadcount ?? null;
+  const prevHeadcount = previous ? previous.AvgHeadcount : null;
+
+  const salesPerEmp = latest.SalesPerEmployee ?? null;
+  const prevSalesPerEmp = previous ? previous.SalesPerEmployee : null;
+
+  const turnover = parseFloat(latest.Turnover); // handles "9.09%" → 9.09
+  const prevTurnover = previous ? parseFloat(previous.Turnover) : null;
 
   const cards = [
     {
       title: "Total Sales",
-      value: `$${latest.TotalSales.toLocaleString()}`,
-      change: previous ? calculateChange(latest.TotalSales, previous.TotalSales) : null,
+      value: totalSales != null ? `$${totalSales.toLocaleString()}` : "-",
+      change: calculateChange(totalSales, prevSales),
     },
     {
       title: "Avg Headcount",
-      value: latest.AvgHeadcount.toFixed(1),
-      change: previous
-        ? calculateChange(latest.AvgHeadcount, previous.AvgHeadcount)
-        : null,
+      value: avgHeadcount != null ? avgHeadcount.toFixed(1) : "-",
+      change: calculateChange(avgHeadcount, prevHeadcount),
     },
     {
       title: "Sales per Employee",
-      value: `$${latest.SalesPerEmployee.toFixed(2)}`,
-      change: previous
-        ? calculateChange(latest.SalesPerEmployee, previous.SalesPerEmployee)
-        : null,
+      value: salesPerEmp != null ? `$${salesPerEmp.toFixed(2)}` : "-",
+      change: calculateChange(salesPerEmp, prevSalesPerEmp),
     },
     {
       title: "Turnover",
-      value: `${latest.Turnover.toFixed(1)}%`,
-      change: previous ? calculateChange(latest.Turnover, previous.Turnover) : null,
+      value: !isNaN(turnover) ? turnover.toFixed(1) + "%" : "-",
+      change: calculateChange(turnover, prevTurnover),
     },
   ];
 
