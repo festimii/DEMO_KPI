@@ -17,7 +17,10 @@ import {
   Alert,
   Box,
   Skeleton,
+  Paper,
+  Chip,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
 const YEAR_OPTIONS = [2025, 2024, 2023];
 
@@ -33,6 +36,13 @@ const formatPercent = (value) => {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return "—";
   return `${numeric >= 0 ? "+" : ""}${numeric.toFixed(1)}%`;
+};
+
+const formatAbsolutePercent = (value) => {
+  if (value == null || Number.isNaN(value)) return "—";
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "—";
+  return `${numeric.toFixed(1)}%`;
 };
 
 const normalizeStoreRecord = (record) => ({
@@ -147,121 +157,268 @@ export default function App() {
     () => stores.find((store) => store.StoreID === selectedStore),
     [selectedStore, stores]
   );
+  const storeHighlights = useMemo(() => {
+    if (!selectedStoreRecord) return [];
+    const yoy =
+      selectedStoreRecord.SalesYoY != null && Number.isFinite(Number(selectedStoreRecord.SalesYoY))
+        ? Number(selectedStoreRecord.SalesYoY)
+        : null;
+
+    return [
+      {
+        label: "Chain Contribution",
+        value:
+          selectedStoreRecord.SalesContributionPct != null &&
+          Number.isFinite(Number(selectedStoreRecord.SalesContributionPct))
+            ? formatAbsolutePercent(selectedStoreRecord.SalesContributionPct)
+            : "—",
+        caption: "of annual revenue",
+      },
+      {
+        label: "Annual Sales",
+        value: formatCurrency(selectedStoreRecord.TotalSalesYear) ?? "—",
+        caption: `Fiscal year ${year}`,
+      },
+      {
+        label: "YoY Growth",
+        value: yoy != null ? `${yoy >= 0 ? "+" : ""}${yoy.toFixed(1)}%` : "—",
+        caption: "vs previous year",
+        valueColor: yoy != null ? (yoy >= 0 ? "success.light" : "error.light") : undefined,
+      },
+      {
+        label: "Sales per Employee",
+        value:
+          selectedStoreRecord.AvgSalesPerEmployee != null &&
+          Number.isFinite(Number(selectedStoreRecord.AvgSalesPerEmployee))
+            ? formatCurrency(selectedStoreRecord.AvgSalesPerEmployee)
+            : "—",
+        caption: "productivity snapshot",
+      },
+    ];
+  }, [selectedStoreRecord, year]);
 
   return (
     <Layout darkMode={darkMode} onToggleDarkMode={() => setDarkMode((prev) => !prev)}>
-      <Stack spacing={4}>
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800 }} gutterBottom>
-            Store KPI Performance
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Explore how each store is performing month over month and keep an eye on sales,
-            efficiency and people metrics in one place.
-          </Typography>
-        </Box>
-
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          alignItems={{ xs: "stretch", sm: "center" }}
+      <Stack spacing={5}>
+        <Box
+          sx={(theme) => ({
+            position: "relative",
+            overflow: "hidden",
+            borderRadius: 4,
+            px: { xs: 3, md: 6 },
+            py: { xs: 5, md: 6 },
+            color:
+              theme.palette.mode === "dark"
+                ? theme.palette.primary.contrastText
+                : theme.palette.text.primary,
+            background:
+              theme.palette.mode === "dark"
+                ? `radial-gradient(circle at 15% 0%, ${alpha(theme.palette.primary.main, 0.6)} 0%, transparent 55%), linear-gradient(140deg, ${alpha(
+                    theme.palette.background.paper,
+                    0.95
+                  )} 0%, ${alpha(theme.palette.background.paper, 0.7)} 55%, ${alpha(
+                    theme.palette.primary.dark,
+                    0.4
+                  )} 100%)`
+                : `radial-gradient(circle at -10% 0%, ${alpha(theme.palette.primary.light, 0.55)} 0%, transparent 60%), linear-gradient(135deg, ${alpha(
+                    theme.palette.primary.main,
+                    0.15
+                  )} 0%, #ffffff 55%, ${alpha(theme.palette.primary.main, 0.08)} 100%)`,
+            boxShadow:
+              theme.palette.mode === "dark"
+                ? "0 32px 90px rgba(15, 23, 42, 0.85)"
+                : "0 24px 60px rgba(37, 99, 235, 0.18)",
+          })}
         >
-          <FormControl sx={{ minWidth: 160 }} disabled={loadingStores}>
-            <InputLabel>Year</InputLabel>
-            <Select value={year} label="Year" onChange={(event) => setYear(event.target.value)}>
-              {YEAR_OPTIONS.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <FormControl sx={{ minWidth: 220 }} disabled={loadingStores || stores.length === 0}>
-            <InputLabel>Store</InputLabel>
-            <Select
-              value={selectedStore}
-              label="Store"
-              onChange={(event) => setSelectedStore(event.target.value)}
-            >
-              {stores.map((store) => {
-                const yoy = store.SalesYoY;
-                const contribution = store.SalesContributionPct;
-                return (
-                  <MenuItem key={store.StoreID} value={store.StoreID}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      sx={{ width: "100%" }}
-                    >
-                      <Stack spacing={0.5}>
-                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                          {store.StoreID}
-                        </Typography>
-                        {contribution != null && (
-                          <Typography variant="caption" color="text.secondary">
-                            {formatPercent(contribution)} of chain sales
-                          </Typography>
-                        )}
-                      </Stack>
-                      <Stack spacing={0.5} alignItems="flex-end">
-                        <Typography component="span" variant="body2" color="text.secondary">
-                          {formatCurrency(store.TotalSalesYear)}
-                        </Typography>
-                        {yoy != null && (
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: yoy >= 0 ? "success.main" : "error.main",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {`${yoy >= 0 ? "+" : ""}${yoy.toFixed(1)}% vs LY`}
-                          </Typography>
-                        )}
-                      </Stack>
-                    </Stack>
-                  </MenuItem>
-                );
-              })}
-            </Select>
-          </FormControl>
-        </Stack>
-
-        {selectedStoreRecord && (
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={2}
-            alignItems={{ xs: "flex-start", md: "center" }}
-            sx={{ bgcolor: "action.hover", p: 2, borderRadius: 3 }}
-          >
-            <Typography variant="subtitle2" color="text.secondary">
-              {selectedStoreRecord.StoreID} contribution
-            </Typography>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} useFlexGap flexWrap="wrap">
-              <Typography variant="body2" color="text.primary">
-                <strong>{formatPercent(selectedStoreRecord.SalesContributionPct)}</strong> of annual
-                sales
+          <Stack spacing={3} sx={{ position: "relative", zIndex: 1 }}>
+            <Chip
+              label="Crowdt Intelligence"
+              color="primary"
+              sx={{
+                alignSelf: "flex-start",
+                fontWeight: 600,
+                letterSpacing: 0.4,
+                textTransform: "uppercase",
+              }}
+            />
+            <Stack spacing={1.5}>
+              <Typography variant="h3" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
+                Store KPI Performance
               </Typography>
-              {selectedStoreRecord.SalesYoY != null && (
-                <Typography
-                  variant="body2"
-                  color={selectedStoreRecord.SalesYoY >= 0 ? "success.main" : "error.main"}
-                >
-                  {`${selectedStoreRecord.SalesYoY >= 0 ? "+" : ""}${selectedStoreRecord.SalesYoY.toFixed(
-                    1
-                  )}% vs previous year`}
-                </Typography>
-              )}
-              {selectedStoreRecord.AvgSalesPerEmployee != null && (
-                <Typography variant="body2" color="text.secondary">
-                  {`Avg. sales per employee: $${selectedStoreRecord.AvgSalesPerEmployee.toFixed(0)}`}
-                </Typography>
-              )}
+              <Typography
+                variant="body1"
+                sx={{ maxWidth: 520, color: (theme) => alpha(theme.palette.text.primary, 0.75) }}
+              >
+                Keep every Crowdt location on pace with a single dashboard that merges sales,
+                efficiency, and people signals into one decisive view.
+              </Typography>
+            </Stack>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              useFlexGap
+              flexWrap="wrap"
+            >
+              <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                Updated automatically from live store telemetry
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                Highlighting <strong>{YEAR_OPTIONS.length}</strong> fiscal years of history
+              </Typography>
             </Stack>
           </Stack>
-        )}
+        </Box>
+
+        <Paper
+          elevation={0}
+          sx={(theme) => ({
+            borderRadius: 4,
+            p: { xs: 3, md: 4 },
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            gap: { xs: 3, md: 4 },
+            alignItems: { xs: "stretch", md: "center" },
+            border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.35 : 0.18)}`,
+            background:
+              theme.palette.mode === "dark"
+                ? alpha(theme.palette.background.paper, 0.9)
+                : "#ffffff",
+            boxShadow:
+              theme.palette.mode === "dark"
+                ? "0 20px 50px rgba(15, 23, 42, 0.6)"
+                : "0 18px 45px rgba(15, 23, 42, 0.08)",
+            backdropFilter: "blur(16px)",
+          })}
+        >
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            alignItems={{ xs: "stretch", sm: "center" }}
+            sx={{ flexShrink: 0, minWidth: { md: 420 } }}
+          >
+            <FormControl sx={{ minWidth: 160 }} disabled={loadingStores}>
+              <InputLabel>Year</InputLabel>
+              <Select value={year} label="Year" onChange={(event) => setYear(event.target.value)}>
+                {YEAR_OPTIONS.map((option) => (
+                  <MenuItem key={option} value={option}>
+                    {option}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl sx={{ minWidth: 220 }} disabled={loadingStores || stores.length === 0}>
+              <InputLabel>Store</InputLabel>
+              <Select
+                value={selectedStore}
+                label="Store"
+                onChange={(event) => setSelectedStore(event.target.value)}
+              >
+                {stores.map((store) => {
+                  const yoy = store.SalesYoY;
+                  const contribution = store.SalesContributionPct;
+                  return (
+                    <MenuItem key={store.StoreID} value={store.StoreID}>
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        sx={{ width: "100%" }}
+                      >
+                        <Stack spacing={0.5}>
+                          <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                            {store.StoreID}
+                          </Typography>
+                          {contribution != null && (
+                            <Typography variant="caption" color="text.secondary">
+                              {formatAbsolutePercent(contribution)} of chain sales
+                            </Typography>
+                          )}
+                        </Stack>
+                        <Stack spacing={0.5} alignItems="flex-end">
+                          <Typography component="span" variant="body2" color="text.secondary">
+                            {formatCurrency(store.TotalSalesYear)}
+                          </Typography>
+                          {yoy != null && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: yoy >= 0 ? "success.main" : "error.main",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {`${yoy >= 0 ? "+" : ""}${yoy.toFixed(1)}% vs LY`}
+                            </Typography>
+                          )}
+                        </Stack>
+                      </Stack>
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+            </FormControl>
+          </Stack>
+
+          {selectedStoreRecord && (
+            <Box
+              sx={(theme) => ({
+                flex: 1,
+                borderLeft: {
+                  md: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
+                },
+                borderTop: {
+                  xs: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
+                  md: "none",
+                },
+                pl: { md: 4 },
+                pt: { xs: 3, md: 0 },
+              })}
+            >
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+                {selectedStoreRecord.StoreID} spotlight
+              </Typography>
+              <Grid container spacing={2}>
+                {storeHighlights.map((metric) => (
+                  <Grid key={metric.label} item xs={12} sm={6} md={3}>
+                    <Box
+                      sx={(theme) => ({
+                        borderRadius: 3,
+                        p: 2,
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        background:
+                          theme.palette.mode === "dark"
+                            ? alpha(theme.palette.primary.main, 0.12)
+                            : alpha(theme.palette.primary.main, 0.08),
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                      })}
+                    >
+                      <Typography variant="caption" sx={{ fontWeight: 600, letterSpacing: 0.4 }}>
+                        {metric.label}
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontWeight: 700,
+                          color: metric.valueColor ?? "text.primary",
+                        }}
+                      >
+                        {metric.value}
+                      </Typography>
+                      {metric.caption && (
+                        <Typography variant="caption" color="text.secondary">
+                          {metric.caption}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+        </Paper>
 
         {error && <Alert severity="error">{error}</Alert>}
 
